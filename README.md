@@ -3,12 +3,21 @@
 Web app tĩnh (React + Vite). Đọc ảnh bằng Gemini Vision, xuất file Excel gồm 7 cột:
 Mã yêu cầu | Mã thiết bị | Tên GSBH | SĐT GSBH | Tên khách hàng | SĐT khách hàng | Địa chỉ
 
-## Cách dùng
-1. Mở web, bấm **⚙ API key**, dán key Gemini rồi **Lưu** (có thể đổi hoặc xóa bất cứ lúc nào).
-2. Chọn 1 hoặc nhiều ảnh (hoặc kéo thả).
-3. Bấm **Đọc ảnh**. Mỗi ảnh ra 1 dòng, tất cả ảnh của lần này gộp chung 1 bảng.
-4. Kiểm tra, sửa ô nếu đọc sai.
-5. Bấm **Xuất Excel**. Tên file dạng `export_tickets_2026-10-31 11_23_28.xlsx`.
+## Hai cách nhập dữ liệu
+**Cách 1: Chọn ảnh** (cần API key Gemini)
+1. Bấm nút **API key** ở góc phải, dán key rồi **Lưu** (đổi hoặc xóa lúc nào cũng được).
+2. Chọn 1 hoặc nhiều ảnh, kéo thả, hoặc nhấn **Ctrl + V** để dán ảnh vừa copy / vừa chụp màn hình.
+3. Bấm **Đọc ảnh**. Mỗi ảnh ra 1 dòng, tất cả gộp chung 1 bảng.
+
+**Cách 2: Dán văn bản** (không cần API key, không tốn lượt Gemini)
+1. Sang tab **Dán văn bản**.
+2. Copy toàn bộ nội dung trang "Chi tiết Yêu cầu" (từ dòng "Mã yêu cầu") rồi dán vào ô.
+3. Bấm **Lọc dữ liệu**. Dán nhiều yêu cầu liền nhau cũng được, mỗi yêu cầu ra 1 dòng.
+4. Ô nào không tìm thấy dữ liệu sẽ để trống và có cảnh báo để anh/chị tự điền.
+
+Hai cách dùng chung 1 bảng: có thể vừa đọc ảnh vừa dán văn bản, rồi xuất 1 file.
+
+Sau đó: kiểm tra, sửa ô nếu cần, bấm **Xuất Excel**. Tên file dạng `export_tickets_2026-10-31 11_23_28.xlsx`.
 
 ## Lấy API key miễn phí
 aistudio.google.com → đăng nhập Gmail → Get API key → Create API key.

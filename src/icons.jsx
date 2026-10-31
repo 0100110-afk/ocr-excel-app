@@ -92,5 +92,13 @@ export const IconTrash = make(
     <path d="M9 7V4h6v3" />
   </>
 )
+export const IconText = make(
+  <>
+    <path d="M6 3h8l5 5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+    <path d="M14 3v5h5" />
+    <path d="M8 13h8M8 17h6" />
+  </>
+)
+export const IconFilter = make(<path d="M3 5h18l-7 8v6l-4-2v-4z" />)
 export const IconPlay = make(<path d="M7 4l13 8-13 8z" />)
 export const IconStop = make(<rect x="6" y="6" width="12" height="12" rx="1.5" />)

@@ -3,6 +3,7 @@ import { COLUMNS } from './columns.js'
 import { extractFromImage } from './gemini.js'
 import { downloadWorkbook } from './excel.js'
 import { imagesFromClipboard, pastedName } from './paste.js'
+import { parseTickets } from './parseText.js'
 import {
   IconAlert,
   IconCheck,
@@ -11,10 +12,13 @@ import {
   IconDownload,
   IconEye,
   IconEyeOff,
+  IconFilter,
+  IconImage,
   IconKey,
   IconPlay,
   IconStop,
   IconTable,
+  IconText,
   IconTrash,
   IconUpload,
 } from './icons.jsx'
@@ -66,6 +70,10 @@ export default function App() {
   const [fallbackInput, setFallbackInput] = useState(() => loadFallback(loadLS(LS_MODEL, DEFAULT_MODEL)))
   const [showKey, setShowKey] = useState(false)
 
+  const [mode, setMode] = useState('image') // 'image' = chọn ảnh, 'text' = dán văn bản
+  const [textInput, setTextInput] = useState('')
+  const [textMsg, setTextMsg] = useState(null) // { type: 'ok' | 'warn' | 'err', text, lines? }
+
   const [items, setItems] = useState([]) // {id, file, url, status, error, rows}
   const [running, setRunning] = useState(false)
   const [dragOver, setDragOver] = useState(false)
@@ -96,7 +104,9 @@ export default function App() {
   )
 
   const pending = items.filter((it) => it.status === 'wait' || it.status === 'error').length
-  const doneCount = items.filter((it) => it.status === 'done').length
+  const imgItems = items.filter((it) => it.kind !== 'text')
+  const textCount = items.length - imgItems.length
+  const doneCount = imgItems.filter((it) => it.status === 'done').length
 
   // ---- Cài đặt API key ----
   function saveSettings() {
@@ -147,6 +157,30 @@ export default function App() {
       return prev.filter((x) => x.id !== id)
     })
   }
+  // ---- Lọc dữ liệu từ văn bản dán vào (không cần API key) ----
+  function filterText() {
+    const { rows, warnings } = parseTickets(textInput)
+    if (!rows.length) {
+      setTextMsg({
+        type: 'err',
+        text: 'Không tìm thấy dữ liệu. Hãy copy toàn bộ nội dung trang "Chi tiết Yêu cầu" (bắt đầu từ dòng "Mã yêu cầu") rồi dán vào ô.',
+      })
+      return
+    }
+    const d = new Date()
+    const t = [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':')
+    setItems((prev) => [
+      ...prev,
+      { id: ++uid, kind: 'text', file: null, url: '', name: `Văn bản ${t}`, status: 'done', error: '', rows },
+    ])
+    setTextInput('')
+    setTextMsg(
+      warnings.length
+        ? { type: 'warn', text: `Đã lọc ${rows.length} yêu cầu, một số ô còn trống, hãy kiểm tra trong bảng:`, lines: warnings }
+        : { type: 'ok', text: `Đã lọc ${rows.length} yêu cầu vào bảng bên dưới.` }
+    )
+  }
+
   function clearAll() {
     items.forEach((it) => URL.revokeObjectURL(it.url))
     setItems([])
@@ -316,11 +350,9 @@ export default function App() {
                 Xóa key
               </button>
             )}
-            {apiKey && (
-              <button className="btn ghost" onClick={() => setShowSettings(false)}>
-                Đóng
-              </button>
-            )}
+            <button className="btn ghost" onClick={() => setShowSettings(false)}>
+              Đóng
+            </button>
           </div>
           <p className="warn">
             Key chỉ nằm trong trình duyệt của bạn, không gửi lên máy chủ nào khác ngoài Google. Không dùng app này trên máy dùng chung.
@@ -329,6 +361,28 @@ export default function App() {
         </section>
       )}
 
+      <div className="tabs" role="tablist" aria-label="Cách nhập dữ liệu">
+        <button
+          role="tab"
+          aria-selected={mode === 'image'}
+          className={'tab' + (mode === 'image' ? ' on' : '')}
+          onClick={() => setMode('image')}
+        >
+          <IconImage size={18} />
+          Chọn ảnh
+        </button>
+        <button
+          role="tab"
+          aria-selected={mode === 'text'}
+          className={'tab' + (mode === 'text' ? ' on' : '')}
+          onClick={() => setMode('text')}
+        >
+          <IconText size={18} />
+          Dán văn bản
+        </button>
+      </div>
+
+      {mode === 'image' && (
       <section
         className={'drop' + (dragOver ? ' over' : '')}
         onDragOver={(e) => {
@@ -365,12 +419,81 @@ export default function App() {
           chung 1 file Excel.
         </div>
       </section>
+      )}
+
+      {mode === 'text' && (
+        <section className="card textbox">
+          <div className="bar">
+            <div>
+              <h2>Dán văn bản yêu cầu</h2>
+              <p className="sub">
+                Copy toàn bộ nội dung trang "Chi tiết Yêu cầu" rồi dán vào ô. App tự lọc ra 7 cột, không cần API key và không
+                tốn lượt Gemini. Dán nhiều yêu cầu liền nhau cũng được.
+              </p>
+            </div>
+          </div>
+          <textarea
+            className="textarea"
+            value={textInput}
+            onChange={(e) => {
+              setTextInput(e.target.value)
+              if (textMsg) setTextMsg(null)
+            }}
+            placeholder={'Mã yêu cầu\nT002661\nMã thiết bị\n328018356\n...'}
+            spellCheck={false}
+            aria-label="Văn bản yêu cầu"
+            rows={9}
+          />
+          {textMsg && (
+            <div className={'msg ' + textMsg.type} role="status">
+              {textMsg.type === 'ok' ? <IconCheck size={16} strokeWidth={2.4} /> : <IconAlert size={16} />}
+              <div>
+                {textMsg.text}
+                {textMsg.lines && (
+                  <ul>
+                    {textMsg.lines.map((l) => (
+                      <li key={l}>{l}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="row gap">
+            <button className="btn primary big" onClick={filterText} disabled={!textInput.trim()}>
+              <IconFilter size={18} />
+              Lọc dữ liệu
+            </button>
+            <button
+              className="btn ghost"
+              onClick={() => {
+                setTextInput('')
+                setTextMsg(null)
+              }}
+              disabled={!textInput}
+            >
+              <IconClose size={16} />
+              Xóa ô
+            </button>
+          </div>
+        </section>
+      )}
 
       {items.length > 0 && (
         <section className="card">
           <div className="bar">
             <div>
-              <b>{items.length}</b> ảnh · <b>{doneCount}</b> đã đọc · <b>{allRows.length}</b> dòng dữ liệu
+              {imgItems.length > 0 && (
+                <>
+                  <b>{imgItems.length}</b> ảnh · <b>{doneCount}</b> đã đọc ·{' '}
+                </>
+              )}
+              {textCount > 0 && (
+                <>
+                  <b>{textCount}</b> văn bản ·{' '}
+                </>
+              )}
+              <b>{allRows.length}</b> dòng dữ liệu
             </div>
             <div className="row gap">
               {running ? (
@@ -378,7 +501,7 @@ export default function App() {
                   <IconStop size={16} />
                   Dừng
                 </button>
-              ) : (
+              ) : imgItems.length > 0 ? (
                 <button className="btn primary" onClick={runExtraction} disabled={pending === 0}>
                   <IconPlay size={16} />
                   {pending === 0
@@ -387,7 +510,7 @@ export default function App() {
                       ? `Đọc ${pending} ảnh`
                       : `Đọc ${pending} ảnh còn lại`}
                 </button>
-              )}
+              ) : null}
               <button className="btn ghost" onClick={clearAll} disabled={running}>
                 <IconTrash size={16} />
                 Xóa tất cả
@@ -398,7 +521,13 @@ export default function App() {
           <ul className="thumbs">
             {items.map((it) => (
               <li key={it.id} className={'thumb ' + it.status}>
-                <img src={it.url} alt={it.name} />
+                {it.kind === 'text' ? (
+                  <div className="thumb-ico" aria-hidden="true">
+                    <IconText size={22} />
+                  </div>
+                ) : (
+                  <img src={it.url} alt={it.name} />
+                )}
                 <div className="meta">
                   <span className="name" title={it.name}>
                     {it.name}
@@ -453,6 +582,7 @@ export default function App() {
                       <td key={c.key}>
                         <input
                           className={c.key === 'diaChi' ? 'wide' : ''}
+                          style={c.key === 'diaChi' ? undefined : { minWidth: Math.max(104, c.width * 8) }}
                           aria-label={`${c.header}, dòng ${n + 1}`}
                           value={x.row[c.key]}
                           onChange={(e) => editCell(x.itemId, x.idx, c.key, e.target.value)}
