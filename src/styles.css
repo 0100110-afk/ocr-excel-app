@@ -44,6 +44,7 @@ code { background: #eef3f0; padding: 1px 6px; border-radius: 4px; }
 
 .drop { border: 2px dashed #b7cfc2; background: #fbfdfc; border-radius: 12px; padding: 28px 16px; text-align: center; cursor: pointer; margin-bottom: 14px; display: flex; flex-direction: column; gap: 4px; }
 .drop span { color: var(--muted); font-size: .88rem; }
+kbd { background: #eef3f0; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; font: inherit; font-size: .85em; font-weight: 600; }
 .drop.over { border-color: var(--green); background: #effaf3; }
 
 .bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }

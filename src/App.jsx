@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { COLUMNS } from './columns.js'
 import { extractFromImage } from './gemini.js'
 import { downloadWorkbook } from './excel.js'
+import { imagesFromClipboard, pastedName } from './paste.js'
 
 const LS_KEY = 'ocr_excel_gemini_key'
 const LS_MODEL = 'ocr_excel_gemini_model'
@@ -61,6 +62,19 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Ctrl+V ở bất kỳ đâu trên trang: dán ảnh đang copy (hoặc chụp màn hình bằng Print Screen)
+  useEffect(() => {
+    const onPaste = (e) => {
+      const imgs = imagesFromClipboard(e.clipboardData)
+      if (!imgs.length) return // dán chữ bình thường (vào ô nhập key, sửa bảng...) thì để yên
+      e.preventDefault()
+      addFiles(imgs, true)
+    }
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const allRows = useMemo(
     () => items.flatMap((it) => it.rows.map((r, i) => ({ itemId: it.id, idx: i, row: r }))),
     [items]
@@ -94,14 +108,16 @@ export default function App() {
   }
 
   // ---- Thêm ảnh ----
-  function addFiles(fileList) {
+  function addFiles(fileList, pasted = false) {
     const imgs = Array.from(fileList || []).filter((f) => f.type.startsWith('image/'))
     if (!imgs.length) return
+    const now = new Date()
     setItems((prev) => [
       ...prev,
-      ...imgs.map((file) => ({
+      ...imgs.map((file, i) => ({
         id: ++uid,
         file,
+        name: pasted ? pastedName(i, imgs.length, now) : file.name,
         url: URL.createObjectURL(file),
         status: 'wait',
         error: '',
@@ -292,8 +308,11 @@ export default function App() {
             e.target.value = ''
           }}
         />
-        <strong>Bấm để chọn ảnh</strong> hoặc kéo thả vào đây
-        <span>Chọn 1 hoặc nhiều ảnh cùng lúc. Tất cả sẽ ra chung 1 file Excel.</span>
+        <strong>Bấm để chọn ảnh</strong>, kéo thả, hoặc nhấn <kbd>Ctrl</kbd> + <kbd>V</kbd> để dán ảnh
+        <span>
+          Dán được ảnh vừa copy hoặc vừa chụp màn hình (Print Screen, Win + Shift + S). Có thể thêm nhiều lần, tất cả ra
+          chung 1 file Excel.
+        </span>
       </section>
 
       {items.length > 0 && (
@@ -321,10 +340,10 @@ export default function App() {
           <ul className="thumbs">
             {items.map((it) => (
               <li key={it.id} className={'thumb ' + it.status}>
-                <img src={it.url} alt={it.file.name} />
+                <img src={it.url} alt={it.name} />
                 <div className="meta">
-                  <span className="name" title={it.file.name}>
-                    {it.file.name}
+                  <span className="name" title={it.name}>
+                    {it.name}
                   </span>
                   <span className={'badge ' + it.status}>{statusLabel[it.status]}</span>
                   {it.error && <span className={it.status === 'busy' ? 'note' : 'err'}>{it.error}</span>}
