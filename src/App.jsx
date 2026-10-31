@@ -3,6 +3,21 @@ import { COLUMNS } from './columns.js'
 import { extractFromImage } from './gemini.js'
 import { downloadWorkbook } from './excel.js'
 import { imagesFromClipboard, pastedName } from './paste.js'
+import {
+  IconAlert,
+  IconCheck,
+  IconClock,
+  IconClose,
+  IconDownload,
+  IconEye,
+  IconEyeOff,
+  IconKey,
+  IconPlay,
+  IconStop,
+  IconTable,
+  IconTrash,
+  IconUpload,
+} from './icons.jsx'
 
 const LS_KEY = 'ocr_excel_gemini_key'
 const LS_MODEL = 'ocr_excel_gemini_model'
@@ -13,7 +28,7 @@ const MODEL_SUGGESTIONS = ['gemini-flash-latest', 'gemini-flash-lite-latest', 'g
 const NO_FALLBACK = '-' // giá trị lưu khi người dùng chủ động tắt model dự phòng
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-const maskKey = (k) => (k ? `${k.slice(0, 4)}••••••••${k.slice(-4)}` : '')
+const maskKey = (k) => (k ? `${k.slice(0, 4)}••••${k.slice(-4)}` : '')
 
 function loadLS(key, fallback = '') {
   try {
@@ -193,19 +208,44 @@ export default function App() {
   }
 
   const statusLabel = { wait: 'Chờ đọc', busy: 'Đang đọc...', done: 'Đã đọc', error: 'Lỗi' }
+  const statusIcon = {
+    wait: <IconClock size={13} />,
+    busy: <IconClock size={13} />,
+    done: <IconCheck size={13} strokeWidth={2.4} />,
+    error: <IconAlert size={13} />,
+  }
 
   return (
     <div className="app">
-      <header className="top">
-        <div>
-          <h1>Ảnh → Excel</h1>
-          <p className="sub">Tải ảnh chi tiết yêu cầu lên, app đọc dữ liệu và xuất 1 file Excel theo mẫu.</p>
+      <header className="topbar">
+        <div className="topbar-in">
+          <div className="brand">
+            <div className="logo">
+              <IconTable size={24} />
+            </div>
+            <div>
+              <h1>OCR EXCEL APP</h1>
+              <p className="sub">Trích xuất dữ liệu từ ảnh</p>
+            </div>
+          </div>
+          <button
+            className={'keybtn' + (showSettings ? ' open' : '')}
+            onClick={() => setShowSettings((s) => !s)}
+            aria-expanded={showSettings}
+            title="Cài đặt API key"
+          >
+            <IconKey size={17} />
+            <span>API key</span>
+            {apiKey ? (
+              <span className="keyval">{maskKey(apiKey)}</span>
+            ) : (
+              <span className="keyval none">Chưa có</span>
+            )}
+          </button>
         </div>
-        <button className="btn ghost" onClick={() => setShowSettings((s) => !s)}>
-          ⚙ API key {apiKey ? '✓' : '(chưa có)'}
-        </button>
       </header>
 
+      <main className="wrap">
       {showSettings && (
         <section className="card settings">
           <h2>Cài đặt Gemini API</h2>
@@ -215,7 +255,7 @@ export default function App() {
             </p>
           ) : (
             <p className="hint">
-              Chưa có key. Lấy miễn phí tại <b>aistudio.google.com</b> → Get API key → Create API key, rồi dán vào đây.
+              Chưa có key. Lấy miễn phí tại <b>aistudio.google.com</b>: chọn Get API key, rồi Create API key, sau đó dán vào đây.
             </p>
           )}
           <label className="field">
@@ -229,8 +269,14 @@ export default function App() {
                 autoComplete="off"
                 spellCheck={false}
               />
-              <button className="btn ghost" type="button" onClick={() => setShowKey((s) => !s)}>
-                {showKey ? 'Ẩn' : 'Hiện'}
+              <button
+                className="btn ghost icon-only"
+                type="button"
+                onClick={() => setShowKey((s) => !s)}
+                aria-label={showKey ? 'Ẩn key' : 'Hiện key'}
+                title={showKey ? 'Ẩn key' : 'Hiện key'}
+              >
+                {showKey ? <IconEyeOff /> : <IconEye />}
               </button>
             </div>
           </label>
@@ -308,11 +354,16 @@ export default function App() {
             e.target.value = ''
           }}
         />
-        <strong>Bấm để chọn ảnh</strong>, kéo thả, hoặc nhấn <kbd>Ctrl</kbd> + <kbd>V</kbd> để dán ảnh
-        <span>
-          Dán được ảnh vừa copy hoặc vừa chụp màn hình (Print Screen, Win + Shift + S). Có thể thêm nhiều lần, tất cả ra
+        <div className="drop-icon">
+          <IconUpload size={24} />
+        </div>
+        <div className="drop-title">
+          Kéo ảnh vào đây, bấm để chọn, hoặc dán bằng <kbd>Ctrl</kbd> + <kbd>V</kbd>
+        </div>
+        <div className="drop-sub">
+          Dán được ảnh vừa copy hoặc vừa chụp màn hình (Print Screen, Win + Shift + S). Chọn nhiều ảnh cùng lúc, tất cả ra
           chung 1 file Excel.
-        </span>
+        </div>
       </section>
 
       {items.length > 0 && (
@@ -324,14 +375,21 @@ export default function App() {
             <div className="row gap">
               {running ? (
                 <button className="btn danger" onClick={() => (cancelRef.current = true)}>
+                  <IconStop size={16} />
                   Dừng
                 </button>
               ) : (
                 <button className="btn primary" onClick={runExtraction} disabled={pending === 0}>
-                  {pending === items.length ? `Đọc ${pending} ảnh` : `Đọc ${pending} ảnh còn lại`}
+                  <IconPlay size={16} />
+                  {pending === 0
+                    ? 'Đã đọc xong'
+                    : pending === items.length
+                      ? `Đọc ${pending} ảnh`
+                      : `Đọc ${pending} ảnh còn lại`}
                 </button>
               )}
               <button className="btn ghost" onClick={clearAll} disabled={running}>
+                <IconTrash size={16} />
                 Xóa tất cả
               </button>
             </div>
@@ -345,11 +403,20 @@ export default function App() {
                   <span className="name" title={it.name}>
                     {it.name}
                   </span>
-                  <span className={'badge ' + it.status}>{statusLabel[it.status]}</span>
+                  <span className={'badge ' + it.status}>
+                    {statusIcon[it.status]}
+                    {statusLabel[it.status]}
+                  </span>
                   {it.error && <span className={it.status === 'busy' ? 'note' : 'err'}>{it.error}</span>}
                 </div>
-                <button className="x" onClick={() => removeItem(it.id)} disabled={running && it.status === 'busy'} title="Bỏ ảnh này">
-                  ×
+                <button
+                  className="x"
+                  onClick={() => removeItem(it.id)}
+                  disabled={running && it.status === 'busy'}
+                  aria-label={`Bỏ ảnh ${it.name}`}
+                  title="Bỏ ảnh này"
+                >
+                  <IconClose size={16} />
                 </button>
               </li>
             ))}
@@ -361,11 +428,12 @@ export default function App() {
         <section className="card">
           <div className="bar">
             <h2>Kiểm tra dữ liệu</h2>
-            <button className="btn primary" onClick={exportExcel}>
-              ⬇ Xuất Excel ({allRows.length} dòng)
+            <button className="btn primary big" onClick={exportExcel}>
+              <IconDownload size={18} strokeWidth={2} />
+              Xuất Excel ({allRows.length} dòng)
             </button>
           </div>
-          <p className="hint">Có thể sửa trực tiếp trong ô nếu đọc sai. Số điện thoại được lưu dạng văn bản để giữ số 0 đầu.</p>
+          <p className="hint">Sửa trực tiếp trong ô nếu đọc sai. Số điện thoại lưu dạng văn bản để giữ số 0 đầu.</p>
           <div className="tablewrap">
             <table>
               <thead>
@@ -385,14 +453,20 @@ export default function App() {
                       <td key={c.key}>
                         <input
                           className={c.key === 'diaChi' ? 'wide' : ''}
+                          aria-label={`${c.header}, dòng ${n + 1}`}
                           value={x.row[c.key]}
                           onChange={(e) => editCell(x.itemId, x.idx, c.key, e.target.value)}
                         />
                       </td>
                     ))}
                     <td>
-                      <button className="x" onClick={() => removeRow(x.itemId, x.idx)} title="Xóa dòng">
-                        ×
+                      <button
+                        className="x"
+                        onClick={() => removeRow(x.itemId, x.idx)}
+                        aria-label={`Xóa dòng ${n + 1}`}
+                        title="Xóa dòng"
+                      >
+                        <IconClose size={16} />
                       </button>
                     </td>
                   </tr>
@@ -402,6 +476,7 @@ export default function App() {
           </div>
         </section>
       )}
+      </main>
     </div>
   )
 }
