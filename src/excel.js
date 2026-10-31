@@ -38,7 +38,13 @@ export async function buildWorkbook(rows) {
     const row = ws.getRow(idx + 2)
     COLUMNS.forEach((c, i) => {
       const cell = row.getCell(i + 1)
-      cell.value = cellValue(c, r[c.key])
+      const val = cellValue(c, r[c.key])
+      cell.value = val
+      // Số có 0 đầu (số điện thoại): ghi dạng số nhưng gán định dạng đủ chữ số để vẫn hiện số 0 (0374649681)
+      if (typeof val === 'number') {
+        const digits = String(r[c.key]).trim()
+        if (digits.length > 1 && digits.startsWith('0')) cell.numFmt = '0'.repeat(digits.length)
+      }
       cell.font = { name: 'Calibri', size: 11 }
       // Số cũng căn trái cho đồng đều với các cột chữ
       cell.alignment = { horizontal: 'left', vertical: 'bottom' }

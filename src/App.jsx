@@ -446,8 +446,7 @@ export default function App() {
             <div>
               <h2>Dán văn bản yêu cầu</h2>
               <p className="sub">
-                Copy toàn bộ nội dung trang "Chi tiết Yêu cầu" rồi dán vào ô. App tự lọc ra 8 cột, không cần API key và không
-                tốn lượt Gemini. Dán nhiều yêu cầu liền nhau cũng được.
+                Copy toàn bộ nội dung trang "Chi tiết Yêu cầu" rồi dán vào ô. Dán một hoặc nhiều yêu cầu liền nhau.
               </p>
             </div>
           </div>
@@ -577,7 +576,7 @@ export default function App() {
               </button>
             </div>
           </div>
-          <p className="hint">Sửa trực tiếp trong ô nếu đọc sai. Khi xuất Excel, Mã thiết bị và số điện thoại được ghi dạng số (số điện thoại sẽ không còn số 0 đầu).</p>
+          <p className="hint">Sửa trực tiếp trong ô nếu đọc sai.</p>
           <div className="tablewrap">
             <table>
               <thead>

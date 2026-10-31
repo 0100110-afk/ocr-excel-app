@@ -18,7 +18,7 @@ Mã yêu cầu | Mã thiết bị | Tình trạng thiết bị | Tên GSBH | SĐ
 
 Sau đó: kiểm tra, sửa ô nếu cần, bấm **Xuất Excel**. Tên file dạng `export_tickets_2026-10-31 11_23_28.xlsx`.
 
-**Định dạng Excel:** Mã thiết bị, SĐT GSBH, SĐT khách hàng ghi dạng số (định dạng General) nên Excel không báo lỗi "số lưu dạng văn bản". Lưu ý số điện thoại dạng số sẽ mất số 0 đầu (0879339239 hiện là 879339239). Giá trị không chỉ gồm chữ số (có chữ, dấu +, để trống) vẫn ghi dạng văn bản.
+**Định dạng Excel:** Mã thiết bị, SĐT GSBH, SĐT khách hàng ghi dạng số (định dạng General) nên Excel không báo lỗi "số lưu dạng văn bản". Số có số 0 đầu (số điện thoại) được gán định dạng đủ chữ số (ví dụ `0000000000`) nên vẫn hiện đủ số 0: 0879339239. Giá trị không chỉ gồm chữ số (có chữ, dấu +, để trống) vẫn ghi dạng văn bản.
 
 ## Lấy API key miễn phí
 aistudio.google.com → đăng nhập Gmail → Get API key → Create API key.
