@@ -11,6 +11,7 @@ Hãy đọc chính xác từng ký tự (giữ nguyên dấu tiếng Việt) và
 - tenKhach: TÊN trong mục "Thông tin cửa hàng" (dòng trên)
 - sdtKhach: SỐ ĐIỆN THOẠI trong mục "Thông tin cửa hàng" (dòng dưới)
 - diaChi: giá trị của "Địa chỉ thiết bị", giữ nguyên toàn bộ, kể cả dấu phẩy
+- tinhTrang: nội dung của mục "Mô tả tình trạng thiết bị" (thường nằm cuối trang; nếu ảnh không chụp tới mục này thì để chuỗi rỗng)
 
 Quy tắc:
 - Số điện thoại là chuỗi, GIỮ NGUYÊN số 0 đầu, chỉ gồm chữ số.
@@ -31,8 +32,9 @@ const SCHEMA = {
       tenKhach: { type: 'STRING' },
       sdtKhach: { type: 'STRING' },
       diaChi: { type: 'STRING' },
+      tinhTrang: { type: 'STRING' },
     },
-    required: ['maYeuCau', 'maThietBi', 'tenGSBH', 'sdtGSBH', 'tenKhach', 'sdtKhach', 'diaChi'],
+    required: ['maYeuCau', 'maThietBi', 'tenGSBH', 'sdtGSBH', 'tenKhach', 'sdtKhach', 'diaChi', 'tinhTrang'],
   },
 }
 
@@ -136,6 +138,7 @@ async function callGemini({ data, apiKey, model, signal }) {
     tenKhach: String(r.tenKhach ?? '').trim(),
     sdtKhach: String(r.sdtKhach ?? '').replace(/\s+/g, ''),
     diaChi: String(r.diaChi ?? '').trim(),
+    tinhTrang: String(r.tinhTrang ?? '').trim(),
   }))
 }
 

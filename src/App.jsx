@@ -63,16 +63,19 @@ let uid = 0
 export default function App() {
   const [apiKey, setApiKey] = useState(() => loadLS(LS_KEY))
   const [model, setModel] = useState(() => loadLS(LS_MODEL, DEFAULT_MODEL))
-  const [showSettings, setShowSettings] = useState(() => !loadLS(LS_KEY))
+  const [showSettings, setShowSettings] = useState(false)
   const [keyInput, setKeyInput] = useState('')
   const [modelInput, setModelInput] = useState(() => loadLS(LS_MODEL, DEFAULT_MODEL))
   const [fallback, setFallback] = useState(() => loadFallback(loadLS(LS_MODEL, DEFAULT_MODEL)))
   const [fallbackInput, setFallbackInput] = useState(() => loadFallback(loadLS(LS_MODEL, DEFAULT_MODEL)))
   const [showKey, setShowKey] = useState(false)
 
-  const [mode, setMode] = useState('image') // 'image' = chọn ảnh, 'text' = dán văn bản
+  const [mode, setMode] = useState('text') // 'text' = dán văn bản (mặc định), 'image' = chọn ảnh
   const [textInput, setTextInput] = useState('')
   const [textMsg, setTextMsg] = useState(null) // { type: 'ok' | 'warn' | 'err', text, lines? }
+  const [keepOld, setKeepOld] = useState(false) // mặc định: nhập dữ liệu mới thì xóa dữ liệu cũ
+  const keepOldRef = useRef(false)
+  keepOldRef.current = keepOld
 
   const [items, setItems] = useState([]) // {id, file, url, status, error, rows}
   const [running, setRunning] = useState(false)
@@ -91,6 +94,7 @@ export default function App() {
       const imgs = imagesFromClipboard(e.clipboardData)
       if (!imgs.length) return // dán chữ bình thường (vào ô nhập key, sửa bảng...) thì để yên
       e.preventDefault()
+      setMode('image') // dán ảnh ở tab nào cũng chuyển sang tab ảnh để thấy ảnh vừa dán
       addFiles(imgs, true)
     }
     document.addEventListener('paste', onPaste)
@@ -132,14 +136,23 @@ export default function App() {
     setKeyInput('')
   }
 
+  // Nhập dữ liệu mới: bỏ kết quả cũ (ảnh đã đọc, văn bản đã lọc) trừ khi bật "Giữ dữ liệu cũ".
+  // Ảnh đang chờ đọc hoặc lỗi vẫn giữ lại để đọc/thử lại.
+  function keepBase(prev) {
+    if (keepOldRef.current) return prev
+    return prev.filter((it) => {
+      const drop = it.kind === 'text' || it.status === 'done'
+      if (drop && it.url) URL.revokeObjectURL(it.url)
+      return !drop
+    })
+  }
+
   // ---- Thêm ảnh ----
   function addFiles(fileList, pasted = false) {
     const imgs = Array.from(fileList || []).filter((f) => f.type.startsWith('image/'))
     if (!imgs.length) return
     const now = new Date()
-    setItems((prev) => [
-      ...prev,
-      ...imgs.map((file, i) => ({
+    const fresh = imgs.map((file, i) => ({
         id: ++uid,
         file,
         name: pasted ? pastedName(i, imgs.length, now) : file.name,
@@ -147,8 +160,8 @@ export default function App() {
         status: 'wait',
         error: '',
         rows: [],
-      })),
-    ])
+      }))
+    setItems((prev) => [...keepBase(prev), ...fresh])
   }
   function removeItem(id) {
     setItems((prev) => {
@@ -170,7 +183,7 @@ export default function App() {
     const d = new Date()
     const t = [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':')
     setItems((prev) => [
-      ...prev,
+      ...keepBase(prev),
       { id: ++uid, kind: 'text', file: null, url: '', name: `Văn bản ${t}`, status: 'done', error: '', rows },
     ])
     setTextInput('')
@@ -361,25 +374,31 @@ export default function App() {
         </section>
       )}
 
-      <div className="tabs" role="tablist" aria-label="Cách nhập dữ liệu">
-        <button
-          role="tab"
-          aria-selected={mode === 'image'}
-          className={'tab' + (mode === 'image' ? ' on' : '')}
-          onClick={() => setMode('image')}
-        >
-          <IconImage size={18} />
-          Chọn ảnh
-        </button>
-        <button
-          role="tab"
-          aria-selected={mode === 'text'}
-          className={'tab' + (mode === 'text' ? ' on' : '')}
-          onClick={() => setMode('text')}
-        >
-          <IconText size={18} />
-          Dán văn bản
-        </button>
+      <div className="modebar">
+        <div className="tabs" role="tablist" aria-label="Cách nhập dữ liệu">
+          <button
+            role="tab"
+            aria-selected={mode === 'text'}
+            className={'tab' + (mode === 'text' ? ' on' : '')}
+            onClick={() => setMode('text')}
+          >
+            <IconText size={18} />
+            Dán văn bản
+          </button>
+          <button
+            role="tab"
+            aria-selected={mode === 'image'}
+            className={'tab' + (mode === 'image' ? ' on' : '')}
+            onClick={() => setMode('image')}
+          >
+            <IconImage size={18} />
+            Chọn ảnh
+          </button>
+        </div>
+        <label className="keep" title="Mặc định: mỗi lần nhập dữ liệu mới, dữ liệu cũ trong bảng sẽ được xóa">
+          <input type="checkbox" checked={keepOld} onChange={(e) => setKeepOld(e.target.checked)} />
+          Giữ dữ liệu cũ khi nhập mới
+        </label>
       </div>
 
       {mode === 'image' && (
@@ -427,7 +446,7 @@ export default function App() {
             <div>
               <h2>Dán văn bản yêu cầu</h2>
               <p className="sub">
-                Copy toàn bộ nội dung trang "Chi tiết Yêu cầu" rồi dán vào ô. App tự lọc ra 7 cột, không cần API key và không
+                Copy toàn bộ nội dung trang "Chi tiết Yêu cầu" rồi dán vào ô. App tự lọc ra 8 cột, không cần API key và không
                 tốn lượt Gemini. Dán nhiều yêu cầu liền nhau cũng được.
               </p>
             </div>
@@ -479,21 +498,11 @@ export default function App() {
         </section>
       )}
 
-      {items.length > 0 && (
+      {imgItems.length > 0 && (
         <section className="card">
           <div className="bar">
             <div>
-              {imgItems.length > 0 && (
-                <>
-                  <b>{imgItems.length}</b> ảnh · <b>{doneCount}</b> đã đọc ·{' '}
-                </>
-              )}
-              {textCount > 0 && (
-                <>
-                  <b>{textCount}</b> văn bản ·{' '}
-                </>
-              )}
-              <b>{allRows.length}</b> dòng dữ liệu
+              <b>{imgItems.length}</b> ảnh · <b>{doneCount}</b> đã đọc · <b>{allRows.length}</b> dòng dữ liệu
             </div>
             <div className="row gap">
               {running ? (
@@ -519,7 +528,7 @@ export default function App() {
           </div>
 
           <ul className="thumbs">
-            {items.map((it) => (
+            {imgItems.map((it) => (
               <li key={it.id} className={'thumb ' + it.status}>
                 {it.kind === 'text' ? (
                   <div className="thumb-ico" aria-hidden="true">
@@ -557,12 +566,18 @@ export default function App() {
         <section className="card">
           <div className="bar">
             <h2>Kiểm tra dữ liệu</h2>
-            <button className="btn primary big" onClick={exportExcel}>
-              <IconDownload size={18} strokeWidth={2} />
-              Xuất Excel ({allRows.length} dòng)
-            </button>
+            <div className="row gap">
+              <button className="btn ghost" onClick={clearAll} disabled={running}>
+                <IconTrash size={16} />
+                Xóa dữ liệu
+              </button>
+              <button className="btn primary big" onClick={exportExcel}>
+                <IconDownload size={18} strokeWidth={2} />
+                Xuất Excel ({allRows.length} dòng)
+              </button>
+            </div>
           </div>
-          <p className="hint">Sửa trực tiếp trong ô nếu đọc sai. Số điện thoại lưu dạng văn bản để giữ số 0 đầu.</p>
+          <p className="hint">Sửa trực tiếp trong ô nếu đọc sai. Khi xuất Excel, Mã thiết bị và số điện thoại được ghi dạng số (số điện thoại sẽ không còn số 0 đầu).</p>
           <div className="tablewrap">
             <table>
               <thead>
@@ -582,7 +597,7 @@ export default function App() {
                       <td key={c.key}>
                         <input
                           className={c.key === 'diaChi' ? 'wide' : ''}
-                          style={c.key === 'diaChi' ? undefined : { minWidth: Math.max(104, c.width * 8) }}
+                          style={{ minWidth: c.minW }}
                           aria-label={`${c.header}, dòng ${n + 1}`}
                           value={x.row[c.key]}
                           onChange={(e) => editCell(x.itemId, x.idx, c.key, e.target.value)}

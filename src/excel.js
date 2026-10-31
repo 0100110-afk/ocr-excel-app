@@ -10,7 +10,15 @@ export function exportFileName(d = new Date()) {
   )
 }
 
-// Tạo workbook theo mẫu: header nền xanh lá, chữ trắng, SĐT lưu dạng văn bản (giữ số 0 đầu)
+// Cột num: chỉ gồm chữ số (tối đa 15 chữ số, giới hạn độ chính xác của Excel) thì ghi dạng số.
+// Giá trị khác (có chữ, dấu +, để trống...) vẫn ghi dạng văn bản để không mất dữ liệu.
+export function cellValue(col, raw) {
+  const v = raw == null ? '' : String(raw).trim()
+  if (col.num && /^\d{1,15}$/.test(v)) return Number(v)
+  return v
+}
+
+// Tạo workbook theo mẫu: header nền xanh lá, chữ trắng, định dạng ô là General
 export async function buildWorkbook(rows) {
   const wb = new ExcelJS.Workbook()
   const ws = wb.addWorksheet('Worksheet')
@@ -30,10 +38,10 @@ export async function buildWorkbook(rows) {
     const row = ws.getRow(idx + 2)
     COLUMNS.forEach((c, i) => {
       const cell = row.getCell(i + 1)
-      const v = r[c.key] == null ? '' : String(r[c.key])
-      if (c.text) cell.numFmt = '@'
-      cell.value = v
+      cell.value = cellValue(c, r[c.key])
       cell.font = { name: 'Calibri', size: 11 }
+      // Số cũng căn trái cho đồng đều với các cột chữ
+      cell.alignment = { horizontal: 'left', vertical: 'bottom' }
     })
   })
 

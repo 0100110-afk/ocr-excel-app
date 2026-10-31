@@ -1,23 +1,24 @@
 # Ảnh → Excel (đọc ảnh chi tiết yêu cầu, xuất Excel theo mẫu)
 
 Web app tĩnh (React + Vite). Đọc ảnh bằng Gemini Vision, xuất file Excel gồm 7 cột:
-Mã yêu cầu | Mã thiết bị | Tên GSBH | SĐT GSBH | Tên khách hàng | SĐT khách hàng | Địa chỉ
+Mã yêu cầu | Mã thiết bị | Tình trạng thiết bị | Tên GSBH | SĐT GSBH | Tên khách hàng | SĐT khách hàng | Địa chỉ
 
 ## Hai cách nhập dữ liệu
-**Cách 1: Chọn ảnh** (cần API key Gemini)
+**Cách 1: Dán văn bản** (tab mặc định khi mở app; không cần API key, không tốn lượt Gemini)
+1. Copy toàn bộ nội dung trang "Chi tiết Yêu cầu" (từ dòng "Mã yêu cầu") rồi dán vào ô.
+2. Bấm **Lọc dữ liệu**. Dán nhiều yêu cầu liền nhau cũng được, mỗi yêu cầu ra 1 dòng.
+3. Ô nào không tìm thấy dữ liệu sẽ để trống và có cảnh báo để tự điền.
+
+**Cách 2: Chọn ảnh** (cần API key Gemini)
 1. Bấm nút **API key** ở góc phải, dán key rồi **Lưu** (đổi hoặc xóa lúc nào cũng được).
-2. Chọn 1 hoặc nhiều ảnh, kéo thả, hoặc nhấn **Ctrl + V** để dán ảnh vừa copy / vừa chụp màn hình.
-3. Bấm **Đọc ảnh**. Mỗi ảnh ra 1 dòng, tất cả gộp chung 1 bảng.
+2. Chọn 1 hoặc nhiều ảnh, kéo thả, hoặc nhấn **Ctrl + V** để dán ảnh vừa copy / vừa chụp màn hình (dán ở tab nào app cũng tự chuyển sang tab ảnh).
+3. Bấm **Đọc ảnh**. Mỗi ảnh ra 1 dòng, tất cả ảnh của lần này gộp chung 1 bảng.
 
-**Cách 2: Dán văn bản** (không cần API key, không tốn lượt Gemini)
-1. Sang tab **Dán văn bản**.
-2. Copy toàn bộ nội dung trang "Chi tiết Yêu cầu" (từ dòng "Mã yêu cầu") rồi dán vào ô.
-3. Bấm **Lọc dữ liệu**. Dán nhiều yêu cầu liền nhau cũng được, mỗi yêu cầu ra 1 dòng.
-4. Ô nào không tìm thấy dữ liệu sẽ để trống và có cảnh báo để anh/chị tự điền.
-
-Hai cách dùng chung 1 bảng: có thể vừa đọc ảnh vừa dán văn bản, rồi xuất 1 file.
+**Dữ liệu cũ:** mặc định, mỗi lần nhập dữ liệu mới (lọc văn bản hoặc thêm ảnh mới) thì kết quả cũ trong bảng được xóa. Muốn cộng dồn thì bật ô **Giữ dữ liệu cũ khi nhập mới**. Nút **Xóa dữ liệu** xóa sạch bảng.
 
 Sau đó: kiểm tra, sửa ô nếu cần, bấm **Xuất Excel**. Tên file dạng `export_tickets_2026-10-31 11_23_28.xlsx`.
+
+**Định dạng Excel:** Mã thiết bị, SĐT GSBH, SĐT khách hàng ghi dạng số (định dạng General) nên Excel không báo lỗi "số lưu dạng văn bản". Lưu ý số điện thoại dạng số sẽ mất số 0 đầu (0879339239 hiện là 879339239). Giá trị không chỉ gồm chữ số (có chữ, dấu +, để trống) vẫn ghi dạng văn bản.
 
 ## Lấy API key miễn phí
 aistudio.google.com → đăng nhập Gmail → Get API key → Create API key.

@@ -78,13 +78,19 @@ function contactAfter(lines, i) {
 }
 
 function parseOne(lines) {
-  const row = { maYeuCau: '', maThietBi: '', tenGSBH: '', sdtGSBH: '', tenKhach: '', sdtKhach: '', diaChi: '' }
+  const row = { maYeuCau: '', maThietBi: '', tinhTrang: '', tenGSBH: '', sdtGSBH: '', tenKhach: '', sdtKhach: '', diaChi: '' }
   for (let i = 0; i < lines.length; i++) {
     const key = norm(lines[i])
     if (!LABEL_SET.has(key)) continue
     if (key === 'mã yêu cầu') row.maYeuCau = valueAfter(lines, i)
     else if (key === 'mã thiết bị') row.maThietBi = valueAfter(lines, i)
     else if (key === 'địa chỉ thiết bị') row.diaChi = valueAfter(lines, i)
+    else if (key === 'mô tả tình trạng thiết bị') {
+      // Mô tả có thể xuống nhiều dòng: lấy đến khi gặp nhãn khác hoặc hết yêu cầu
+      const parts = []
+      for (let j = i + 1; j < lines.length && !isLabel(lines[j]); j++) parts.push(lines[j])
+      row.tinhTrang = parts.join(' ')
+    }
     else if (key === 'thông tin cửa hàng') {
       const c = contactAfter(lines, i)
       row.tenKhach = c.name
@@ -101,6 +107,7 @@ function parseOne(lines) {
 const FIELD_NAMES = {
   maYeuCau: 'Mã yêu cầu',
   maThietBi: 'Mã thiết bị',
+  tinhTrang: 'Tình trạng thiết bị',
   tenGSBH: 'Tên GSBH',
   sdtGSBH: 'SĐT GSBH',
   tenKhach: 'Tên khách hàng',
