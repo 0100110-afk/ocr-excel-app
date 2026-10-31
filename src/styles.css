@@ -55,6 +55,7 @@ code { background: #eef3f0; padding: 1px 6px; border-radius: 4px; }
 .thumb .meta { display: flex; flex-direction: column; min-width: 0; gap: 2px; padding-right: 18px; }
 .thumb .name { font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .thumb .err { color: var(--red); font-size: .75rem; }
+.thumb .note { color: var(--amber); font-size: .75rem; }
 .badge { font-size: .72rem; font-weight: 600; width: fit-content; padding: 1px 8px; border-radius: 99px; background: #eef1ef; color: var(--muted); }
 .badge.done { background: #dcf5e6; color: var(--green-d); }
 .badge.busy { background: #fff3d6; color: var(--amber); }

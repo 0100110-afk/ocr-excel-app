@@ -50,20 +50,38 @@ export async function fileToBase64(file, maxSide = 2000) {
   return dataUrl.split(',')[1]
 }
 
-function explainError(status, body) {
-  const msg = body?.error?.message || ''
-  if (status === 400 && /API key/i.test(msg)) return 'API key không hợp lệ. Hãy kiểm tra lại key trong phần Cài đặt.'
-  if (status === 403) return 'API key bị từ chối hoặc chưa được phép dùng. Kiểm tra lại key.'
-  if (status === 404) return 'Model không tồn tại. Hãy đổi sang model khác trong Cài đặt (ví dụ gemini-flash-latest).'
-  if (status === 429) return 'Hết lượt dùng miễn phí (theo phút hoặc theo ngày). Chờ một lúc rồi thử lại.'
-  if (status >= 500) return 'Máy chủ Gemini đang bận, thử lại sau.'
-  return msg || `Lỗi ${status}`
+// ---- Lỗi, thử lại, model dự phòng ----
+export class GeminiError extends Error {
+  constructor(message, status) {
+    super(message)
+    this.status = status // 0 = lỗi mạng, -1 = người dùng bấm Dừng
+  }
 }
 
-export async function extractFromImage({ file, apiKey, model, signal }) {
-  const data = await fileToBase64(file)
-  const url = `${ENDPOINT}/${encodeURIComponent(model)}:generateContent`
+const RETRYABLE = new Set([0, 429, 500, 502, 503, 504])
+export const RETRY_DELAYS = [3000, 8000, 20000] // thử lại tối đa 3 lần
 
+function explainError(status, body) {
+  const raw = body?.error?.message || ''
+  const detail = raw ? ` — ${raw.slice(0, 160)}` : ''
+  if (status === 400 && /API key/i.test(raw)) return 'API key không hợp lệ. Hãy kiểm tra lại key trong phần Cài đặt.'
+  if (status === 403) return `API key bị từ chối hoặc chưa được phép dùng (403)${detail}`
+  if (status === 404) return `Model không tồn tại (404). Hãy đổi tên model trong Cài đặt${detail}`
+  if (status === 429) return `Hết lượt dùng miễn phí theo phút hoặc theo ngày (429)${detail}`
+  if (status >= 500) return `Máy chủ Gemini đang bận (${status})${detail}`
+  return `Lỗi ${status}${detail}`
+}
+
+async function sleepCancelable(ms, shouldCancel) {
+  const end = Date.now() + ms
+  while (Date.now() < end) {
+    if (shouldCancel?.()) throw new GeminiError('Đã dừng.', -1)
+    await new Promise((r) => setTimeout(r, Math.min(250, end - Date.now())))
+  }
+}
+
+async function callGemini({ data, apiKey, model, signal }) {
+  const url = `${ENDPOINT}/${encodeURIComponent(model)}:generateContent`
   const body = {
     contents: [
       {
@@ -80,12 +98,17 @@ export async function extractFromImage({ file, apiKey, model, signal }) {
     },
   }
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify(body),
-    signal,
-  })
+  let res
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify(body),
+      signal,
+    })
+  } catch {
+    throw new GeminiError('Không kết nối được tới Gemini (kiểm tra mạng).', 0)
+  }
 
   let json = null
   try {
@@ -93,16 +116,16 @@ export async function extractFromImage({ file, apiKey, model, signal }) {
   } catch {
     /* ignore */
   }
-  if (!res.ok) throw new Error(explainError(res.status, json))
+  if (!res.ok) throw new GeminiError(explainError(res.status, json), res.status)
 
   const text = json?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || ''
-  if (!text) throw new Error('Gemini không trả về dữ liệu (ảnh có thể bị chặn hoặc không đọc được).')
+  if (!text) throw new GeminiError('Gemini không trả về dữ liệu (ảnh có thể bị chặn hoặc không đọc được).', 200)
 
   let parsed
   try {
     parsed = JSON.parse(text)
   } catch {
-    throw new Error('Không phân tích được kết quả trả về từ Gemini.')
+    throw new GeminiError('Không phân tích được kết quả trả về từ Gemini.', 200)
   }
   const arr = Array.isArray(parsed) ? parsed : [parsed]
   return arr.map((r) => ({
@@ -114,4 +137,37 @@ export async function extractFromImage({ file, apiKey, model, signal }) {
     sdtKhach: String(r.sdtKhach ?? '').replace(/\s+/g, ''),
     diaChi: String(r.diaChi ?? '').trim(),
   }))
+}
+
+// Đọc 1 ảnh: thử lại khi lỗi tạm thời, hết lần thì chuyển sang model dự phòng
+export async function extractFromImage({ file, apiKey, model, fallbackModel, onStatus, shouldCancel, imageData }) {
+  const data = imageData ?? (await fileToBase64(file))
+  const models = [model]
+  if (fallbackModel && fallbackModel !== model) models.push(fallbackModel)
+
+  let lastErr = null
+  for (let m = 0; m < models.length; m++) {
+    const mdl = models[m]
+    const hasNext = m < models.length - 1
+
+    for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+      if (shouldCancel?.()) throw new GeminiError('Đã dừng.', -1)
+      try {
+        return await callGemini({ data, apiKey, model: mdl })
+      } catch (e) {
+        if (e.status === -1) throw e
+        lastErr = e
+        if (e.status === 404 && hasNext) break // model chính không tồn tại -> sang model dự phòng
+        if (!RETRYABLE.has(e.status)) throw e // key sai, ảnh lỗi... thử lại cũng vô ích
+        if (attempt < RETRY_DELAYS.length) {
+          const wait = RETRY_DELAYS[attempt]
+          onStatus?.(`${e.message.replace(/[.\s]+$/, '')}. Thử lại lần ${attempt + 1}/${RETRY_DELAYS.length} sau ${wait / 1000} giây...`)
+          await sleepCancelable(wait, shouldCancel)
+        }
+      }
+    }
+
+    if (hasNext) onStatus?.(`Model ${mdl} vẫn lỗi, chuyển sang model dự phòng ${models[m + 1]}...`)
+  }
+  throw lastErr
 }

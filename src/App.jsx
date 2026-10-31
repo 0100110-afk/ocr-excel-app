@@ -5,8 +5,11 @@ import { downloadWorkbook } from './excel.js'
 
 const LS_KEY = 'ocr_excel_gemini_key'
 const LS_MODEL = 'ocr_excel_gemini_model'
+const LS_FALLBACK = 'ocr_excel_gemini_fallback'
 const DEFAULT_MODEL = 'gemini-flash-latest'
+const LITE_MODEL = 'gemini-flash-lite-latest'
 const MODEL_SUGGESTIONS = ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-3-flash-preview']
+const NO_FALLBACK = '-' // giá trị lưu khi người dùng chủ động tắt model dự phòng
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const maskKey = (k) => (k ? `${k.slice(0, 4)}••••••••${k.slice(-4)}` : '')
@@ -27,6 +30,14 @@ function saveLS(key, value) {
   }
 }
 
+// Model dự phòng: mặc định là bản Lite (hoặc bản Flash thường nếu model chính đã là Lite)
+function loadFallback(model) {
+  const stored = loadLS(LS_FALLBACK, '')
+  if (stored === NO_FALLBACK) return ''
+  if (stored) return stored
+  return model === LITE_MODEL ? DEFAULT_MODEL : LITE_MODEL
+}
+
 let uid = 0
 
 export default function App() {
@@ -35,6 +46,8 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(() => !loadLS(LS_KEY))
   const [keyInput, setKeyInput] = useState('')
   const [modelInput, setModelInput] = useState(() => loadLS(LS_MODEL, DEFAULT_MODEL))
+  const [fallback, setFallback] = useState(() => loadFallback(loadLS(LS_MODEL, DEFAULT_MODEL)))
+  const [fallbackInput, setFallbackInput] = useState(() => loadFallback(loadLS(LS_MODEL, DEFAULT_MODEL)))
   const [showKey, setShowKey] = useState(false)
 
   const [items, setItems] = useState([]) // {id, file, url, status, error, rows}
@@ -66,6 +79,9 @@ export default function App() {
     }
     setModel(m)
     saveLS(LS_MODEL, m)
+    const fb = fallbackInput.trim()
+    setFallback(fb)
+    saveLS(LS_FALLBACK, fb || NO_FALLBACK)
     setKeyInput('')
     setShowKey(false)
     if (k || apiKey) setShowSettings(false)
@@ -121,21 +137,19 @@ export default function App() {
       const it = todo[n]
       patch(it.id, { status: 'busy', error: '' })
       try {
-        let rows
-        try {
-          rows = await extractFromImage({ file: it.file, apiKey, model })
-        } catch (e) {
-          // Gặp giới hạn theo phút -> chờ 20 giây rồi thử lại 1 lần
-          if (/Hết lượt/.test(e.message) && !cancelRef.current) {
-            patch(it.id, { status: 'busy', error: 'Đang chờ 20 giây do giới hạn lượt...' })
-            await sleep(20000)
-            patch(it.id, { error: '' })
-            rows = await extractFromImage({ file: it.file, apiKey, model })
-          } else throw e
-        }
+        // Tự thử lại khi Gemini bận/hết lượt phút, rồi chuyển model dự phòng (xem gemini.js)
+        const rows = await extractFromImage({
+          file: it.file,
+          apiKey,
+          model,
+          fallbackModel: fallback,
+          shouldCancel: () => cancelRef.current,
+          onStatus: (msg) => patch(it.id, { status: 'busy', error: msg }),
+        })
         patch(it.id, { status: 'done', rows, error: '' })
       } catch (e) {
-        patch(it.id, { status: 'error', error: e.message || 'Lỗi không xác định' })
+        if (e.status === -1) patch(it.id, { status: 'wait', error: '' }) // người dùng bấm Dừng
+        else patch(it.id, { status: 'error', error: e.message || 'Lỗi không xác định' })
       }
       if (n < todo.length - 1) await sleep(1500) // tránh vượt giới hạn RPM của gói free
     }
@@ -219,6 +233,18 @@ export default function App() {
             </datalist>
             <small>Mặc định gemini-flash-latest (tự trỏ tới bản Flash mới nhất). Nếu báo lỗi model, thử tên khác.</small>
           </label>
+          <label className="field">
+            <span>Model dự phòng (để trống nếu không dùng)</span>
+            <input
+              list="models"
+              value={fallbackInput}
+              onChange={(e) => setFallbackInput(e.target.value)}
+              spellCheck={false}
+            />
+            <small>
+              Khi model chính vẫn lỗi sau 3 lần thử lại, app tự chuyển sang model này. Nên chọn model khác với model chính.
+            </small>
+          </label>
           <div className="row gap">
             <button className="btn primary" onClick={saveSettings} disabled={!keyInput.trim() && !apiKey}>
               Lưu
@@ -301,7 +327,7 @@ export default function App() {
                     {it.file.name}
                   </span>
                   <span className={'badge ' + it.status}>{statusLabel[it.status]}</span>
-                  {it.error && <span className="err">{it.error}</span>}
+                  {it.error && <span className={it.status === 'busy' ? 'note' : 'err'}>{it.error}</span>}
                 </div>
                 <button className="x" onClick={() => removeItem(it.id)} disabled={running && it.status === 'busy'} title="Bỏ ảnh này">
                   ×
