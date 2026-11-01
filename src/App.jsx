@@ -78,6 +78,12 @@ export default function App() {
   keepOldRef.current = keepOld
 
   const [items, setItems] = useState([]) // {id, file, url, status, error, rows}
+  const [toast, setToast] = useState(null) // { text, sub }
+  useEffect(() => {
+    if (!toast) return undefined
+    const t = setTimeout(() => setToast(null), 4500)
+    return () => clearTimeout(t)
+  }, [toast])
   const [running, setRunning] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const fileRef = useRef(null)
@@ -107,6 +113,8 @@ export default function App() {
     [items]
   )
 
+  const isMissing = (v) => !String(v ?? '').trim()
+  const missingRows = allRows.filter((x) => COLUMNS.some((c) => isMissing(x.row[c.key]))).length
   const pending = items.filter((it) => it.status === 'wait' || it.status === 'error').length
   const imgItems = items.filter((it) => it.kind !== 'text')
   const textCount = items.length - imgItems.length
@@ -187,6 +195,10 @@ export default function App() {
       { id: ++uid, kind: 'text', file: null, url: '', name: `Văn bản ${t}`, status: 'done', error: '', rows },
     ])
     setTextInput('')
+    setToast({
+      text: `Đã lọc ${rows.length} yêu cầu`,
+      sub: warnings.length ? `${warnings.length} yêu cầu còn thiếu dữ liệu, xem ô tô vàng trong bảng.` : 'Kiểm tra bảng rồi xuất Excel.',
+    })
     setTextMsg(
       warnings.length
         ? { type: 'warn', text: `Đã lọc ${rows.length} yêu cầu, một số ô còn trống, hãy kiểm tra trong bảng:`, lines: warnings }
@@ -232,6 +244,7 @@ export default function App() {
       if (n < todo.length - 1) await sleep(1500) // tránh vượt giới hạn RPM của gói free
     }
     setRunning(false)
+    if (!cancelRef.current) setToast({ text: 'Đã đọc xong ảnh', sub: 'Kiểm tra bảng rồi xuất Excel.' })
   }
 
   // ---- Sửa dữ liệu ----
@@ -252,6 +265,7 @@ export default function App() {
 
   async function exportExcel() {
     await downloadWorkbook(allRows.map((x) => x.row))
+    setToast({ text: 'Đã tải file Excel', sub: `${allRows.length} dòng · ${COLUMNS.length} cột` })
   }
 
   const statusLabel = { wait: 'Chờ đọc', busy: 'Đang đọc...', done: 'Đã đọc', error: 'Lỗi' }
@@ -293,6 +307,8 @@ export default function App() {
       </header>
 
       <main className="wrap">
+      <div className="split">
+      <div className="col-l">
       {showSettings && (
         <section className="card settings">
           <h2>Cài đặt Gemini API</h2>
@@ -561,10 +577,23 @@ export default function App() {
         </section>
       )}
 
-      {allRows.length > 0 && (
-        <section className="card">
+      </div>
+      <div className="col-r">
+      {allRows.length === 0 ? (
+        <section className="card empty">
+          <div className="empty-ico">
+            <IconTable size={26} />
+          </div>
+          <h2>Chưa có dữ liệu</h2>
+          <p className="sub">Dán văn bản hoặc chọn ảnh ở khung bên trái, bảng kết quả sẽ hiện ở đây.</p>
+        </section>
+      ) : (
+        <section className="card datacard">
           <div className="bar">
-            <h2>Kiểm tra dữ liệu</h2>
+            <div>
+              <h2>Kiểm tra dữ liệu</h2>
+              <p className="hint">Sửa trực tiếp trong ô nếu đọc sai. Ô tô vàng là ô còn thiếu dữ liệu.</p>
+            </div>
             <div className="row gap">
               <button className="btn ghost" onClick={clearAll} disabled={running}>
                 <IconTrash size={16} />
@@ -576,7 +605,11 @@ export default function App() {
               </button>
             </div>
           </div>
-          <p className="hint">Sửa trực tiếp trong ô nếu đọc sai.</p>
+          <div className="chips">
+            <span className="chip">{allRows.length} dòng</span>
+            <span className="chip ok">{allRows.length - missingRows} đầy đủ</span>
+            {missingRows > 0 && <span className="chip wn">{missingRows} thiếu dữ liệu</span>}
+          </div>
           <div className="tablewrap">
             <table>
               <thead>
@@ -593,9 +626,10 @@ export default function App() {
                   <tr key={x.itemId + '-' + x.idx}>
                     <td className="num">{n + 1}</td>
                     {COLUMNS.map((c) => (
-                      <td key={c.key}>
+                      <td key={c.key} className={isMissing(x.row[c.key]) ? 'miss' : ''}>
                         <input
                           className={c.key === 'diaChi' ? 'wide' : ''}
+                          placeholder={isMissing(x.row[c.key]) ? 'Thiếu dữ liệu' : undefined}
                           style={{ minWidth: c.minW }}
                           aria-label={`${c.header}, dòng ${n + 1}`}
                           value={x.row[c.key]}
@@ -618,9 +652,27 @@ export default function App() {
               </tbody>
             </table>
           </div>
+          <div className="foot">
+            <IconTable size={15} />
+            <span>8 cột theo mẫu export_tickets · {allRows.length} dòng</span>
+          </div>
         </section>
       )}
+      </div>
+      </div>
       </main>
+      {toast && (
+        <div className="toast" role="status">
+          <IconCheck size={20} strokeWidth={2.4} />
+          <div>
+            <b>{toast.text}</b>
+            {toast.sub && <div className="tm">{toast.sub}</div>}
+          </div>
+          <button className="tx" onClick={() => setToast(null)} aria-label="Đóng thông báo">
+            <IconClose size={14} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
