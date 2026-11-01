@@ -447,7 +447,7 @@ export default function App() {
           <IconUpload size={24} />
         </div>
         <div className="drop-title">
-          Kéo ảnh vào đây, bấm để chọn, hoặc dán bằng <kbd>Ctrl</kbd> + <kbd>V</kbd>
+          Kéo thả ảnh, bấm để chọn, hoặc <kbd>Ctrl</kbd> + <kbd>V</kbd>
         </div>
         <div className="drop-sub">
           Dán được ảnh vừa copy hoặc vừa chụp màn hình (Print Screen, Win + Shift + S). Chọn nhiều ảnh cùng lúc, tất cả ra
