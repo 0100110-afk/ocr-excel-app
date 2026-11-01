@@ -1,3 +1,4 @@
+import { splitAddress } from './address.js'
 // Lọc dữ liệu từ đoạn văn bản copy trên trang "Chi tiết Yêu cầu" (không cần AI, chạy ngay trên trình duyệt)
 
 const LABELS = [
@@ -78,7 +79,7 @@ function contactAfter(lines, i) {
 }
 
 function parseOne(lines) {
-  const row = { maYeuCau: '', maThietBi: '', tinhTrang: '', tenGSBH: '', sdtGSBH: '', tenKhach: '', sdtKhach: '', diaChi: '' }
+  const row = { maYeuCau: '', maThietBi: '', tinhTrang: '', tenGSBH: '', sdtGSBH: '', tenKhach: '', sdtKhach: '', diaChi: '', xaPhuong: '', tinhTP: '' }
   for (let i = 0; i < lines.length; i++) {
     const key = norm(lines[i])
     if (!LABEL_SET.has(key)) continue
@@ -101,6 +102,7 @@ function parseOne(lines) {
       row.sdtGSBH = c.phone
     }
   }
+  Object.assign(row, splitAddress(row.diaChi))
   return row
 }
 
@@ -113,6 +115,8 @@ const FIELD_NAMES = {
   tenKhach: 'Tên khách hàng',
   sdtKhach: 'SĐT khách hàng',
   diaChi: 'Địa chỉ',
+  xaPhuong: 'Xã/Phường',
+  tinhTP: 'Tỉnh/Thành phố',
 }
 
 // Trả về { rows, warnings }. Dán nhiều yêu cầu liền nhau cũng được (tách tại mỗi "Mã yêu cầu").

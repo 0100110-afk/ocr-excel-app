@@ -9,7 +9,9 @@ export const COLUMNS = [
   { key: 'sdtGSBH', header: 'SĐT GSBH', width: 14, num: true, minW: 120 },
   { key: 'tenKhach', header: 'Tên khách hàng', width: 22, minW: 180 },
   { key: 'sdtKhach', header: 'SĐT khách hàng', width: 17, num: true, minW: 124 },
-  { key: 'diaChi', header: 'Địa chỉ', width: 80, minW: 200 },
+  { key: 'diaChi', header: 'Địa chỉ', width: 80, minW: 260 },
+  { key: 'xaPhuong', header: 'Xã/Phường', width: 22, minW: 150 },
+  { key: 'tinhTP', header: 'Tỉnh/Thành phố', width: 20, minW: 150 },
 ]
 
 export const emptyRow = () =>

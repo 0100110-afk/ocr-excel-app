@@ -1,7 +1,7 @@
 # Ảnh → Excel (đọc ảnh chi tiết yêu cầu, xuất Excel theo mẫu)
 
-Web app tĩnh (React + Vite). Đọc ảnh bằng Gemini Vision, xuất file Excel gồm 7 cột:
-Mã yêu cầu | Mã thiết bị | Tình trạng thiết bị | Tên GSBH | SĐT GSBH | Tên khách hàng | SĐT khách hàng | Địa chỉ
+Web app tĩnh (React + Vite). Đọc ảnh bằng Gemini Vision, xuất file Excel gồm 10 cột:
+Mã yêu cầu | Mã thiết bị | Tình trạng thiết bị | Tên GSBH | SĐT GSBH | Tên khách hàng | SĐT khách hàng | Địa chỉ | Xã/Phường | Tỉnh/Thành phố
 
 ## Hai cách nhập dữ liệu
 **Cách 1: Dán văn bản** (tab mặc định khi mở app; không cần API key, không tốn lượt Gemini)
@@ -15,6 +15,8 @@ Mã yêu cầu | Mã thiết bị | Tình trạng thiết bị | Tên GSBH | SĐ
 3. Bấm **Đọc ảnh**. Mỗi ảnh ra 1 dòng, tất cả ảnh của lần này gộp chung 1 bảng.
 
 **Dữ liệu cũ:** mặc định, mỗi lần nhập dữ liệu mới (lọc văn bản hoặc thêm ảnh mới) thì kết quả cũ trong bảng được xóa. Muốn cộng dồn thì bật ô **Giữ dữ liệu cũ khi nhập mới**. Nút **Xóa dữ liệu** xóa sạch bảng.
+
+Cột Xã/Phường và Tỉnh/Thành phố tự tách từ Địa chỉ (lấy phường/xã cuối cùng, tỉnh là đoạn cuối).
 
 Sau đó: kiểm tra, sửa ô nếu cần, bấm **Xuất Excel**. Tên file dạng `export_tickets_2026-10-31 11_23_28.xlsx`.
 

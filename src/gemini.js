@@ -1,3 +1,4 @@
+import { splitAddress } from './address.js'
 // Gọi Gemini Vision trực tiếp từ trình duyệt bằng API key người dùng nhập
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
 
@@ -138,6 +139,7 @@ async function callGemini({ data, apiKey, model, signal }) {
     tenKhach: String(r.tenKhach ?? '').trim(),
     sdtKhach: String(r.sdtKhach ?? '').replace(/\s+/g, ''),
     diaChi: String(r.diaChi ?? '').trim(),
+    ...splitAddress(r.diaChi),
     tinhTrang: String(r.tinhTrang ?? '').trim(),
   }))
 }
