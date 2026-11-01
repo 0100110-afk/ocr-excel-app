@@ -3,6 +3,21 @@
 // - Xã/Phường: đoạn cuối cùng bắt đầu bằng "Phường", "Xã" hoặc "Thị trấn" (địa chỉ hay lặp phường nhiều lần).
 const WARD = /^(phường|xã|thị trấn)(?=\s|$)/i
 
+// Làm sạch địa chỉ: bỏ đoạn trống (",,") và đoạn trùng nhau (chỉ giữ lần đầu), ví dụ "Xã A,Xã A,Hà Nội" -> "Xã A,Hà Nội"
+export function cleanAddress(diaChi) {
+  const seen = new Set()
+  const out = []
+  for (const raw of String(diaChi ?? '').split(',')) {
+    const p = raw.replace(/\s+/g, ' ').trim()
+    if (!p) continue
+    const k = p.toLowerCase()
+    if (seen.has(k)) continue
+    seen.add(k)
+    out.push(p)
+  }
+  return out.join(',')
+}
+
 export function splitAddress(diaChi) {
   const parts = String(diaChi ?? '')
     .split(',')

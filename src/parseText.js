@@ -1,4 +1,4 @@
-import { splitAddress } from './address.js'
+import { cleanAddress, splitAddress } from './address.js'
 // Lọc dữ liệu từ đoạn văn bản copy trên trang "Chi tiết Yêu cầu" (không cần AI, chạy ngay trên trình duyệt)
 
 const LABELS = [
@@ -103,6 +103,7 @@ function parseOne(lines) {
       row.sdtGSBH = c.phone
     }
   }
+  row.diaChi = cleanAddress(row.diaChi)
   Object.assign(row, splitAddress(row.diaChi))
   return row
 }

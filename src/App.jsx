@@ -264,12 +264,18 @@ export default function App() {
     )
   }
 
-  // Copy 1 dòng liên tục (cách nhau 1 dấu cách): Mã thiết bị, Tình trạng, Tên khách hàng, SĐT khách hàng, Địa chỉ, Loại thiết bị
+  // Copy 1 dòng thành 4 dòng: (Mã thiết bị + Tình trạng) / (Tên khách + SĐT) / Địa chỉ / Loại thiết bị
   async function copyRow(row, n) {
-    const text = ['maThietBi', 'tinhTrang', 'tenKhach', 'sdtKhach', 'diaChi', 'loaiTB']
-      .map((k) => String(row[k] ?? '').replace(/\s+/g, ' ').trim())
+    const v = (k) => String(row[k] ?? '').replace(/\s+/g, ' ').trim()
+    const text = [
+      [v('maThietBi'), v('tinhTrang')],
+      [v('tenKhach'), v('sdtKhach')],
+      [v('diaChi')],
+      [v('loaiTB')],
+    ]
+      .map((parts) => parts.filter(Boolean).join(' '))
       .filter(Boolean)
-      .join(' ')
+      .join('\n')
     try {
       await navigator.clipboard.writeText(text)
     } catch {
@@ -280,7 +286,7 @@ export default function App() {
       document.execCommand('copy')
       ta.remove()
     }
-    setToast({ text: `Đã copy dòng ${n}`, sub: text.length > 90 ? text.slice(0, 90) + '…' : text })
+    setToast({ text: `Đã copy dòng ${n}`, sub: text.replace(/\n/g, ' · ').slice(0, 90) + (text.length > 90 ? '…' : '') })
   }
 
   async function exportExcel() {
