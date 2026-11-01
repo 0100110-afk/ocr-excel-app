@@ -79,12 +79,13 @@ function contactAfter(lines, i) {
 }
 
 function parseOne(lines) {
-  const row = { maYeuCau: '', maThietBi: '', tinhTrang: '', tenGSBH: '', sdtGSBH: '', tenKhach: '', sdtKhach: '', diaChi: '', xaPhuong: '', tinhTP: '' }
+  const row = { maYeuCau: '', maThietBi: '', tinhTrang: '', tenGSBH: '', sdtGSBH: '', tenKhach: '', sdtKhach: '', diaChi: '', xaPhuong: '', tinhTP: '', loaiTB: '' }
   for (let i = 0; i < lines.length; i++) {
     const key = norm(lines[i])
     if (!LABEL_SET.has(key)) continue
     if (key === 'mã yêu cầu') row.maYeuCau = valueAfter(lines, i)
     else if (key === 'mã thiết bị') row.maThietBi = valueAfter(lines, i)
+    else if (key === 'tên thiết bị') row.loaiTB = valueAfter(lines, i)
     else if (key === 'địa chỉ thiết bị') row.diaChi = valueAfter(lines, i)
     else if (key === 'mô tả tình trạng thiết bị') {
       // Mô tả có thể xuống nhiều dòng: lấy đến khi gặp nhãn khác hoặc hết yêu cầu
@@ -117,6 +118,7 @@ const FIELD_NAMES = {
   diaChi: 'Địa chỉ',
   xaPhuong: 'Xã/Phường',
   tinhTP: 'Tỉnh/Thành phố',
+  loaiTB: 'Loại thiết bị',
 }
 
 // Trả về { rows, warnings }. Dán nhiều yêu cầu liền nhau cũng được (tách tại mỗi "Mã yêu cầu").

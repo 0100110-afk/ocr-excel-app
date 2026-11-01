@@ -11,6 +11,7 @@ Hãy đọc chính xác từng ký tự (giữ nguyên dấu tiếng Việt) và
 - sdtGSBH: SỐ ĐIỆN THOẠI trong mục "Thông tin giám sát bán hàng" (dòng dưới)
 - tenKhach: TÊN trong mục "Thông tin cửa hàng" (dòng trên)
 - sdtKhach: SỐ ĐIỆN THOẠI trong mục "Thông tin cửa hàng" (dòng dưới)
+- loaiTB: giá trị của "Tên thiết bị" (ví dụ Tủ mát 1 cánh)
 - diaChi: giá trị của "Địa chỉ thiết bị", giữ nguyên toàn bộ, kể cả dấu phẩy
 - tinhTrang: nội dung của mục "Mô tả tình trạng thiết bị" (thường nằm cuối trang; nếu ảnh không chụp tới mục này thì để chuỗi rỗng)
 
@@ -33,9 +34,10 @@ const SCHEMA = {
       tenKhach: { type: 'STRING' },
       sdtKhach: { type: 'STRING' },
       diaChi: { type: 'STRING' },
+      loaiTB: { type: 'STRING' },
       tinhTrang: { type: 'STRING' },
     },
-    required: ['maYeuCau', 'maThietBi', 'tenGSBH', 'sdtGSBH', 'tenKhach', 'sdtKhach', 'diaChi', 'tinhTrang'],
+    required: ['maYeuCau', 'maThietBi', 'tenGSBH', 'sdtGSBH', 'tenKhach', 'sdtKhach', 'diaChi', 'loaiTB', 'tinhTrang'],
   },
 }
 
@@ -140,6 +142,7 @@ async function callGemini({ data, apiKey, model, signal }) {
     sdtKhach: String(r.sdtKhach ?? '').replace(/\s+/g, ''),
     diaChi: String(r.diaChi ?? '').trim(),
     ...splitAddress(r.diaChi),
+    loaiTB: String(r.loaiTB ?? '').trim(),
     tinhTrang: String(r.tinhTrang ?? '').trim(),
   }))
 }

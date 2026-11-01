@@ -12,6 +12,7 @@ export const COLUMNS = [
   { key: 'diaChi', header: 'Địa chỉ', width: 80, minW: 260 },
   { key: 'xaPhuong', header: 'Xã/Phường', width: 22, minW: 150 },
   { key: 'tinhTP', header: 'Tỉnh/Thành phố', width: 20, minW: 150 },
+  { key: 'loaiTB', header: 'Loại thiết bị', width: 22, minW: 150 },
 ]
 
 export const emptyRow = () =>

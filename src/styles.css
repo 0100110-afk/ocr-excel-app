@@ -317,3 +317,6 @@ td input { padding: 6px 8px; font-size: 13px; }
   .keybtn .keyval { display: none; }
   .thumbs { grid-template-columns: 1fr; }
 }
+td.cp, th.cp { width: 36px; padding: 2px 4px; text-align: center; }
+.x.copy, td .x.copy { position: static; width: 28px; height: 28px; color: var(--muted); }
+.x.copy:hover { color: var(--accent); background: var(--accent-soft); }

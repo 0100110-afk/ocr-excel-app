@@ -7,6 +7,7 @@ import { parseTickets } from './parseText.js'
 import {
   IconAlert,
   IconCheck,
+  IconCopy,
   IconClock,
   IconClose,
   IconDownload,
@@ -261,6 +262,25 @@ export default function App() {
     setItems((prev) =>
       prev.map((it) => (it.id === itemId ? { ...it, rows: it.rows.filter((_, i) => i !== idx) } : it))
     )
+  }
+
+  // Copy 1 dòng liên tục (cách nhau 1 dấu cách): Mã thiết bị, Tình trạng, Tên khách hàng, SĐT khách hàng, Địa chỉ, Loại thiết bị
+  async function copyRow(row, n) {
+    const text = ['maThietBi', 'tinhTrang', 'tenKhach', 'sdtKhach', 'diaChi', 'loaiTB']
+      .map((k) => String(row[k] ?? '').replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .join(' ')
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      ta.remove()
+    }
+    setToast({ text: `Đã copy dòng ${n}`, sub: text.length > 90 ? text.slice(0, 90) + '…' : text })
   }
 
   async function exportExcel() {
@@ -614,6 +634,7 @@ export default function App() {
             <table>
               <thead>
                 <tr>
+                  <th className="cp" />
                   <th>#</th>
                   {COLUMNS.map((c) => (
                     <th key={c.key}>{c.header}</th>
@@ -624,6 +645,16 @@ export default function App() {
               <tbody>
                 {allRows.map((x, n) => (
                   <tr key={x.itemId + '-' + x.idx}>
+                    <td className="cp">
+                      <button
+                        className="x copy"
+                        onClick={() => copyRow(x.row, n + 1)}
+                        aria-label={`Copy dữ liệu dòng ${n + 1}`}
+                        title="Copy dòng này"
+                      >
+                        <IconCopy size={16} />
+                      </button>
+                    </td>
                     <td className="num">{n + 1}</td>
                     {COLUMNS.map((c) => (
                       <td key={c.key} className={isMissing(x.row[c.key]) ? 'miss' : ''}>
@@ -654,7 +685,7 @@ export default function App() {
           </div>
           <div className="foot">
             <IconTable size={15} />
-            <span>8 cột theo mẫu export_tickets · {allRows.length} dòng</span>
+            <span>{COLUMNS.length} cột theo mẫu export_tickets · {allRows.length} dòng</span>
           </div>
         </section>
       )}

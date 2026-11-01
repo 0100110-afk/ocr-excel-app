@@ -1,7 +1,7 @@
 # Ảnh → Excel (đọc ảnh chi tiết yêu cầu, xuất Excel theo mẫu)
 
-Web app tĩnh (React + Vite). Đọc ảnh bằng Gemini Vision, xuất file Excel gồm 10 cột:
-Mã yêu cầu | Mã thiết bị | Tình trạng thiết bị | Tên GSBH | SĐT GSBH | Tên khách hàng | SĐT khách hàng | Địa chỉ | Xã/Phường | Tỉnh/Thành phố
+Web app tĩnh (React + Vite). Đọc ảnh bằng Gemini Vision, xuất file Excel gồm 11 cột:
+Mã yêu cầu | Mã thiết bị | Tình trạng thiết bị | Tên GSBH | SĐT GSBH | Tên khách hàng | SĐT khách hàng | Địa chỉ | Xã/Phường | Tỉnh/Thành phố | Loại thiết bị
 
 ## Hai cách nhập dữ liệu
 **Cách 1: Dán văn bản** (tab mặc định khi mở app; không cần API key, không tốn lượt Gemini)

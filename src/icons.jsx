@@ -102,3 +102,10 @@ export const IconText = make(
 export const IconFilter = make(<path d="M3 5h18l-7 8v6l-4-2v-4z" />)
 export const IconPlay = make(<path d="M7 4l13 8-13 8z" />)
 export const IconStop = make(<rect x="6" y="6" width="12" height="12" rx="1.5" />)
+
+export const IconCopy = make(
+  <>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 15V6a2 2 0 0 1 2-2h8" />
+  </>
+)
