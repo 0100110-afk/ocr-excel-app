@@ -10,8 +10,8 @@
   --line-2: #d5d9e0;
   --text: #111111;
   --muted: #6b7280;
-  --ok-soft: #e1f5ea;
-  --ok-ink: #0b6a3e;
+  --ok-soft: #e8f1fd;
+  --ok-ink: #1f63c9;
   --red: #b42318;
   --red-soft: #fde8e6;
   --amber: #85530a;
@@ -228,7 +228,7 @@ td.miss input::placeholder { color: var(--amber); opacity: 1; }
   max-width: 360px; padding: 13px 14px 13px 16px; border-radius: 12px; background: #0f172a; color: #fff;
   box-shadow: 0 12px 32px rgba(15, 23, 42, .3);
 }
-.toast > svg { color: #6ee7b7; margin-top: 1px; }
+.toast > svg { color: #8cc0ff; margin-top: 1px; }
 .toast .tm { font-size: 13px; opacity: .78; }
 .tx { border: 0; background: none; color: #fff; opacity: .7; cursor: pointer; padding: 4px; border-radius: 6px; margin-left: 4px; }
 .tx:hover { opacity: 1; background: rgba(255, 255, 255, .12); }
